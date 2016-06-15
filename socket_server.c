@@ -18,7 +18,65 @@ int isExistUser(char *user);
 int isExistPhone(char *phone);
 int enroll(int clntSocket);
 int modify_passwd(int clntSocket);
+void recv_question(int clntSocket);
 
+void recv_question(int clntSocket)
+{
+	MYSQL *conn;
+	if(openMysql(&conn))
+	{
+		char buffer[BUFSIZ];
+		memset(buffer,sizeof(char)*BUFSIZ,0);
+
+		ssize_t numBytesRecv = recv(clntSocket,buffer,BUFSIZ,0);
+
+		if(numBytesRecv < 0 )
+			puts("recv() failed!\n");
+		char *result_gather[4];
+		int i = 0;
+		char *tmp;
+		tmp = buffer;
+		result_gather[i] = strsep(&tmp,"|");
+		while(result_gather[i])
+		{
+			i++;
+			result_gather[i] = strsep(&tmp,"|");
+		}
+
+		char sql[BUFSIZ] = {0};
+		strcpy(sql,"insert into user_question(account,title,content)values('");
+		strcat(sql,result_gather[0]);
+		strcat(sql,"','");
+		strcat(sql,result_gather[1]);
+		strcat(sql,"','");
+		strcat(sql,result_gather[2]);
+		strcat(sql,"')");
+		puts(sql);
+
+		int res = mysql_query(conn,sql);
+		if(res)
+		{
+			printf("insert error : %s\n",mysql_error(conn));
+			send(clntSocket,"recv_question_false",sizeof("recv_question_false"),0);
+		}
+		else
+		{
+			int ok = mysql_affected_rows(conn);
+			mysql_commit(conn);
+			mysql_close(conn);
+
+			if(ok >= 1)
+			{
+				send(clntSocket,"recv_question_true",sizeof("recv_question_true"),0);
+			}
+			else
+				send(clntSocket,"recv_question_false",sizeof("recv_question_false"),0);
+
+		}
+	}
+	else
+		puts("open mysql faile!");
+}
 int isExistPhone(char *phone)
 {
 	int result = -1;
@@ -364,7 +422,11 @@ void checkOperator(int clntSocket)
 		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
 		modify_passwd(clntSocket);
 	}
-	//else if(!strcmp(operator,""))
+	else if(!strcmp(operator,"user_question"))
+	{
+		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
+		recv_question(clntSocket);
+	}
 }
 
 void main()
