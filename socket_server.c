@@ -19,6 +19,56 @@ int isExistPhone(char *phone);
 int enroll(int clntSocket);
 int modify_passwd(int clntSocket);
 void recv_question(int clntSocket);
+void send_question(int clntSocket);
+
+void send_question(int clntSocket)
+{
+	MYSQL *conn;
+	if(openMysql(&conn))
+	{
+		char buffer[10] = {0};
+		recv(clntSocket,buffer,10,0);
+		int mysql_index = atoi(buffer);
+		mysql_index += 5;
+		char tmp[10] = {0};
+		sprintf(tmp,"%d",mysql_index);
+		char sql[BUFSIZ] = {0};
+		strcpy(sql,"select * from user_question order by time desc,id desc limit ");
+		strcat(sql,buffer);
+		strcat(sql,",");
+		strcat(sql,tmp);
+		puts(sql);
+
+		//res = mysql_query(conn,"select * from user_question order by time DESC ,id desc limit 0,5");
+
+		int res = mysql_query(conn,sql);
+		if(res)
+		{
+			printf("select error %s\n",mysql_error(conn));
+			send(clntSocket,"send_answer_false",sizeof("send_answer_false"),0);
+		}
+		else
+		{
+			MYSQL_RES *res;
+			MYSQL_ROW row;
+			
+			res = mysql_store_result(conn);
+			if(res)
+			{
+				int t;
+				while(row = mysql_fetch_row(res))
+				{
+					for(t=0;t<mysql_num_fields(res);t++)
+					{
+						send(clntSocket,row[t],strlen(row[t]),0);
+					}
+				}
+			}
+			mysql_free_result(res);
+		}
+		mysql_close(conn);
+	}
+}
 
 void recv_question(int clntSocket)
 {
@@ -422,10 +472,15 @@ void checkOperator(int clntSocket)
 		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
 		modify_passwd(clntSocket);
 	}
-	else if(!strcmp(operator,"user_question"))
+	else if(!strcmp(operator,"recv_question"))
 	{
 		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
 		recv_question(clntSocket);
+	}
+	else if(!strcmp(operator,"get_answer"))
+	{
+		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
+		send_question(clntSocket);
 	}
 }
 
