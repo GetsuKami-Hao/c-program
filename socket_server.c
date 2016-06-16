@@ -21,6 +21,62 @@ int modify_passwd(int clntSocket);
 void recv_question(int clntSocket);
 void send_question(int clntSocket);
 void send_answer(int clntSocket);
+void get_answer(int clntSocket)
+{
+	MYSQL *conn;
+	if(openMysql(&conn))
+	{
+		char buffer[BUFSIZ] = {0};
+		recv(clntSocket,buffer,BUFSIZ,0);
+		char *tmp = buffer;
+
+		char *result_gather[4];
+	        result_gather[0] = strsep(&tmp,"|");
+		int i= 0;
+		while(result_gather[i])
+		{
+			i++;
+			result_gather[i] = strsep(&tmp,"|");
+		}
+		char sql[BUFSIZ] = {0};
+		strcpy(sql,"insert into user_answer(id,account,content)values( ");
+		strcat(sql,result_gather[0]);
+		strcat(sql,",'");
+		strcat(sql,result_gather[1]);
+		strcat(sql,"','");
+		strcat(sql,result_gather[2]);
+		strcat(sql,"'");
+
+		int stat = mysql_query(conn,sql);
+		if(stat)
+		{
+			printf("insert error %s\n",mysql_error(conn));
+			send(clntSocket,"add_answer_false",sizeof("add_answer_false"),0);
+		}
+		else
+		{
+			int ok = mysql_affected_rows(conn);
+			mysql_commit(conn);
+			mysql_close(conn);
+
+			if(ok>=1)
+			{
+				send(clntSocket,"add_answer_true",sizeof("add_answer_true"),0);
+				return ;
+			}
+			else
+			{
+				send(clntSocket,"add_answer_false",sizeof("add_answer_false"),0);
+				return ;
+			}
+		}
+	}
+	else
+	{
+		puts("open mysql failed!\n");
+		return ;
+	}
+}
 
 void send_answer(int clntSocket)
 {
@@ -29,7 +85,7 @@ void send_answer(int clntSocket)
 	{
 		char buffer[10] = {0};
 		recv(clntSocket,buffer,10,0);
-		char sql[BUFSIZ] = {0};
+		char sql[60] = {0};
 
 		strcpy(sql,"select * from user_answer where id = ");
 		strcat(sql,buffer);
@@ -527,6 +583,11 @@ void checkOperator(int clntSocket)
 	{
 		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
 		send_answer(clntSocket);
+	}
+	else if(!strcmp(operator,"send_answer"))
+	{
+		send(clntSocket,"recv_operator",sizeof("recv_operator"),0);
+		get_answer(clntSocket);
 	}
 }
 
