@@ -14,6 +14,16 @@
 #define server_port "5000"
 #define MAXPENDING 1000
 
+extern int login(int clntSocket);
+extern int openMysql(MYSQL **conn);
+extern int isExistUser(char *user);
+extern int isExistPhone(char *phone);
+extern int enroll(int clntSocket);
+extern int modify_passwd(int clntSocket);
+extern void recv_question(int clntSocket);
+extern void send_question(int clntSocket);
+extern void send_answer(int clntSocket);
+
 
 void checkOperator(int clntSocket);
 
