@@ -27,7 +27,6 @@ int main(void)
 	int times = 3;
 	int i = 0;
 	int *ret_join = NULL;
-
 	ret = pthread_create(&pt,NULL,(void *)start_routine, &run);
 
 	if(ret != 0)
@@ -42,6 +41,7 @@ int main(void)
 		printf("主线程打印\n");
 		usleep(1);
 	}
+
 	run = 0;
 	pthread_join(pt,(void *)&ret_join);
 	printf("线程返回值: %d\n", *ret_join);

@@ -56,8 +56,4 @@ int main(void)
 		printf("接收到%d个数据，内容为：\"%s\"\n",nbytes,readbuffer);
 	}
 	return 0;
-
-
-
-
 }
