@@ -58,5 +58,6 @@ int my_sum(int number ,...)
 	{
 		sum += va_arg(pArgs,int);
 	}
+	va_end(pArgs);
 	return sum;
 }
