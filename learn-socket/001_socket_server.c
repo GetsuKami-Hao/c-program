@@ -83,6 +83,8 @@ int main(void)
 	{
 		socklen_t addrlen = sizeof(struct sockaddr);
 		sock_clnt = accept(sock_server,(struct sockaddr *)&client_addr, &addrlen);
+		// 将accept()注释之后，client　connect()依然可以连接成功。
+		// 代表accept() 发生在TCP三次握手之后。
 
 		if(sock_clnt < 0)
 		{
@@ -98,13 +100,10 @@ int main(void)
 		{
 			process_conn_server(sock_clnt);
 			close(sock_server);
-			printf("退出子线程成功......\n");
 		}
 		else
 		{
 			close(sock_clnt);
-			printf("退出主线程成功......\n");
 		}
-
 	}
 }
