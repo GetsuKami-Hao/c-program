@@ -10,6 +10,11 @@
 #define PORT 4401
 #define MAXPENDING 2
 
+/*
+ * TCP不提供帧同步，这使得它对于面向字节流的协议是完美的。这个TCP与UDP的一个重要区别。
+ * UDP是面向消息的协议，它保留发送者和接收者之间的消息边界。
+ * TCP是一个面向流的协议，他假定在通信的数据是无结构的。
+ * */
 
 void process_conn_server(int s)
 {
@@ -40,6 +45,7 @@ int main(void)
 
 	sock_server = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	
+
 	if (sock_server < 0)
 	{
 		fprintf(stdout,"socket() error\n");
@@ -49,6 +55,19 @@ int main(void)
 	{
 		puts("创建socket 描述符成功.....");
 	}
+
+  int ret,on = 1;
+  ret = setsockopt(sock_server,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
+  //  允许地址重用,取消程序ctrl + c结束后的TIME_WAIT状态。
+  if(ret < 0)
+  {
+    fprintf(stdout,"setsockopt() error.\n");
+    return -1;
+  }
+  else
+  {
+    puts("setsockopt() success...\n");
+  }
 
 	memset(&server_addr,0,sizeof(struct sockaddr_in));
 	memset(&server_addr,0,sizeof(struct sockaddr_in));
